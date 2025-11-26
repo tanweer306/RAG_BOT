@@ -20,3 +20,4 @@ aiofiles==23.2.1
 httpx==0.26.0
 tenacity==8.2.3
 apscheduler==3.10.4
+supabase==2.3.4
