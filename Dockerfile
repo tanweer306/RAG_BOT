@@ -1,12 +1,18 @@
-FROM oven/bun:slim
+# Use official Python image
+FROM python:3.11-slim
 
+# Create and go to working directory
 WORKDIR /app
 
-COPY package.json bun.lock ./
-RUN bun install
+# Install dependencies first to improve caching
+COPY requirements.txt.
+RUN pip install --no-cache-dir -r requirements.txt
 
+# Copy project files
 COPY . .
 
-EXPOSE 3000
+# Expose port (Railway sets PORT env variable automatically)
+EXPOSE 8000
 
-CMD ["bun", "run", "dev"]   
+# Start FastAPI through uvicorn
+CMD ["uvicorn", "app. main: app", "--host", "0.0.0.0", "--port", "8000"]
