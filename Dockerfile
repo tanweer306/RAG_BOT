@@ -1,19 +1,18 @@
-# Use official Python image
 FROM python:3.11-slim
 
-# Create and go to working directory
 WORKDIR /app
 
-# Install dependencies first to improve caching
+# Copy only backend requirements first
 COPY backend/requirements.txt .
 
+# Install Python dependencies
 RUN pip install --no-cache-dir -r requirements.txt
 
-# Copy project files
-COPY . .
+# Copy the entire backend folder
+COPY backend/ .
 
-# Expose port (Railway sets PORT env variable automatically)
+# Expose the port Railway will use
 EXPOSE 8000
 
-# Start FastAPI through uvicorn
-CMD ["uvicorn", "app. main: app", "--host", "0.0.0.0", "--port", "8000"]
+# Start FastAPI
+CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000"]
