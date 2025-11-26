@@ -13,11 +13,11 @@ COPY backend/requirements.txt .
 # Install Python dependencies
 RUN pip install --no-cache-dir -r requirements.txt
 
-# Copy the entire backend folder
+# Copy the entire backend folder to /app
 COPY backend/ .
 
 # Expose port
 EXPOSE 8000
 
-# Run using Python script
-CMD ["python", "run.py"]
+# Run from the app directory where main.py is
+CMD ["python", "-m", "uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000"]
