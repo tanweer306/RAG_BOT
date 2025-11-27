@@ -23,7 +23,11 @@ scheduler = AsyncIOScheduler()
 # CORS middleware
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=[settings.FRONTEND_URL],
+    allow_origins=[
+        settings.FRONTEND_URL,
+        settings.VERCEL_FRONTEND_URL,
+        "https://rag-bot-89wz-l567k4il7-ieimpact.vercel.app"
+    ],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],

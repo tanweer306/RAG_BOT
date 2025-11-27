@@ -38,6 +38,7 @@ class Settings(BaseSettings):
     
     # CORS
     FRONTEND_URL: str = "http://localhost:3000"
+    VERCEL_FRONTEND_URL: str = ""
     
     # Rate Limiting
     RATE_LIMIT_PER_MINUTE: int = 10
