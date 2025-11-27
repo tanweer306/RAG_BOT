@@ -1,4 +1,4 @@
-from fastapi import FastAPI
+from fastapi import FastAPI, Response, Request
 from fastapi.middleware.cors import CORSMiddleware
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
 from app.routes import upload, chat, documents, session, admin
@@ -26,9 +26,22 @@ app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],  # Allow all origins for development
     allow_credentials=False,  # Set to False when using wildcard origins
-    allow_methods=["*"],
+    allow_methods=["GET", "POST", "PUT", "DELETE", "OPTIONS"],  # Explicitly list methods
     allow_headers=["*"],
 )
+
+# Add explicit OPTIONS handler for pre-flight requests
+@app.options("/{path:path}")
+async def options_handler(request: Request, path: str):
+    """Handle pre-flight OPTIONS requests"""
+    return Response(
+        status_code=200,
+        headers={
+            "Access-Control-Allow-Origin": "*",
+            "Access-Control-Allow-Methods": "GET, POST, PUT, DELETE, OPTIONS",
+            "Access-Control-Allow-Headers": "*",
+        }
+    )
 
 # Include routers
 app.include_router(upload.router, prefix="/api", tags=["Upload"])
