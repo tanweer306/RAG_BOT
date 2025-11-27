@@ -37,25 +37,40 @@ class SessionService:
         This ensures same user always gets same session
         """
         session_id = SessionService.get_client_identifier(request)
-        
-        # Check if session exists in Supabase (raw check)
-        session = SupabaseService.get_session(session_id)
-        
-        if session:
-            # Check expiry logic here too?
-            # If expired, we might want to clean it up and create new, or just reset.
-            # Existing get_session handles expiry deletion.
-            # But for get_or_create, if it's expired, we probably want a fresh one or re-activate.
-            # For now, simple update.
-            SupabaseService.update_session_activity(session_id, request)
-            return session
-        else:
-            # Create new session
-            return SupabaseService.create_session(
-                session_id=session_id,
-                ip_address=request.client.host,
-                user_agent=request.headers.get("User-Agent", "")
-            )
+
+        try:
+            # Check if session exists in Supabase (raw check)
+            session = SupabaseService.get_session(session_id)
+
+            if session:
+                # Update activity best-effort; ignore Supabase failures here
+                try:
+                    SupabaseService.update_session_activity(session_id, request)
+                except Exception as e:
+                    print(f"Error updating Supabase session activity: {e}")
+                return session
+            else:
+                # Try to create a Supabase-backed session, but fall back if it fails
+                try:
+                    return SupabaseService.create_session(
+                        session_id=session_id,
+                        ip_address=request.client.host,
+                        user_agent=request.headers.get("User-Agent", "")
+                    )
+                except Exception as e:
+                    print(f"Error creating Supabase session: {e}")
+        except Exception as e:
+            # Any Supabase error (e.g. client proxy bug) should not crash the app
+            print(f"Error accessing Supabase session in get_or_create_session: {e}")
+
+        # Fallback: return a local, non-persistent session structure
+        now = datetime.now().isoformat()
+        return {
+            "session_id": session_id,
+            "created_at": now,
+            "last_active": now,
+            "language": "en",
+        }
 
     @staticmethod
     def create_session() -> str:
