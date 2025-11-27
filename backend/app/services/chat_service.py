@@ -38,7 +38,11 @@ class ChatService:
         
         # 1. Load recent history if not provided
         if conversation_history is None:
-            conversation_history = SupabaseService.get_chat_history(session_id, limit=20)
+            try:
+                conversation_history = SupabaseService.get_chat_history(session_id, limit=20)
+            except Exception as e:
+                print(f"Error loading chat history from Supabase in ChatService: {e}")
+                conversation_history = []
         
         # 2. Handle long history with summarization
         system_context_messages = []
@@ -56,11 +60,15 @@ class ChatService:
             })
             
         # 3. Retrieve relevant chunks from vector database
-        relevant_chunks = await EmbeddingService.search_similar_chunks(
-            query, 
-            session_id, 
-            limit=settings.MAX_CHUNKS_RETRIEVAL
-        )
+        try:
+            relevant_chunks = await EmbeddingService.search_similar_chunks(
+                query, 
+                session_id, 
+                limit=settings.MAX_CHUNKS_RETRIEVAL
+            )
+        except Exception as e:
+            print(f"Error searching similar chunks in Qdrant: {e}")
+            relevant_chunks = []
         
         # 4. Build context from retrieved chunks
         context_text = "\n\n".join([
@@ -114,9 +122,12 @@ Context from documents:
         # Extract sources
         sources = list(set([chunk["filename"] for chunk in relevant_chunks]))
         
-        # 8. Save messages to Supabase (Async/Background ideally, but direct for now)
-        SupabaseService.add_message(session_id, "user", query, language)
-        SupabaseService.add_message(session_id, "assistant", answer, language, sources)
+        # 8. Save messages to Supabase (best-effort; ignore failures)
+        try:
+            SupabaseService.add_message(session_id, "user", query, language)
+            SupabaseService.add_message(session_id, "assistant", answer, language, sources)
+        except Exception as e:
+            print(f"Error saving chat messages to Supabase: {e}")
         
         return {
             "response": answer,

@@ -33,8 +33,12 @@ async def chat(request: Request, chat_request: ChatRequest):
     try:
         # Get conversation history
         # We can fetch fresh history from Supabase or use session's cached history
-        conversation_history = SupabaseService.get_chat_history(session_id, limit=20)
-        
+        try:
+            conversation_history = SupabaseService.get_chat_history(session_id, limit=20)
+        except Exception as e:
+            logger.error(f"Error getting chat history from Supabase in /chat: {str(e)}")
+            conversation_history = []
+
         logger.info(f"Generating response for query: {chat_request.query[:50]}... Session: {session_id}")
         
         # Generate response
