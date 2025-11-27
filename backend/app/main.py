@@ -21,13 +21,14 @@ app = FastAPI(
 # Background scheduler
 scheduler = AsyncIOScheduler()
 
-# CORS middleware - Allow all origins
+# CORS middleware - Most permissive settings
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
     allow_credentials=False,
-    allow_methods=["*"],
+    allow_methods=["GET", "POST", "PUT", "DELETE", "OPTIONS", "HEAD", "PATCH"],
     allow_headers=["*"],
+    expose_headers=["*"]
 )
 
 # Include routers
@@ -68,7 +69,25 @@ async def health_check():
 
 @app.get("/test-cors")
 async def test_cors():
-    return {"message": "CORS test successful", "timestamp": datetime.now().isoformat()}
+    return {
+        "message": "CORS test successful", 
+        "timestamp": datetime.now().isoformat(),
+        "cors_headers": "working"
+    }
+
+@app.get("/debug")
+async def debug_info():
+    return {
+        "app": "AI Document Chatbot API",
+        "version": "1.0.0",
+        "cors_config": {
+            "allow_origins": ["*"],
+            "allow_credentials": False,
+            "allow_methods": ["GET", "POST", "PUT", "DELETE", "OPTIONS", "HEAD", "PATCH"],
+            "allow_headers": ["*"],
+            "expose_headers": ["*"]
+        }
+    }
 
 if __name__ == "__main__":
     import uvicorn
