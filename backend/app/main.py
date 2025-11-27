@@ -26,7 +26,8 @@ app.add_middleware(
     allow_origins=[
         settings.FRONTEND_URL,
         settings.VERCEL_FRONTEND_URL,
-        "https://rag-bot-89wz-l567k4il7-ieimpact.vercel.app"
+        "https://rag-bot-89wz-l567k4il7-ieimpact.vercel.app",
+        "https://rag-bot-89wz.vercel.app"
     ],
     allow_credentials=True,
     allow_methods=["*"],
