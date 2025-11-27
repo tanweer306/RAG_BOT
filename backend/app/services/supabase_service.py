@@ -10,7 +10,13 @@ class SupabaseService:
     @classmethod
     def get_client(cls) -> Client:
         if not cls._client:
-            cls._client = create_client(settings.SUPABASE_URL, settings.SUPABASE_KEY)
+            try:
+                cls._client = create_client(settings.SUPABASE_URL, settings.SUPABASE_KEY)
+            except Exception as e:
+                print(f"Error creating Supabase client: {e}")
+                print(f"SUPABASE_URL: {settings.SUPABASE_URL}")
+                print(f"SUPABASE_KEY: {settings.SUPABASE_KEY[:10]}..." if settings.SUPABASE_KEY else "None")
+                raise
         return cls._client
 
     # --- Sessions ---

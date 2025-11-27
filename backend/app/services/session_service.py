@@ -67,47 +67,61 @@ class SessionService:
     @staticmethod
     def get_session(session_id: str) -> Optional[Dict]:
         """Get session data with documents and recent history"""
-        # 1. Get Session
-        session = SupabaseService.get_session(session_id)
-        if not session:
-            return None
-        
-        # 2. Check Expiry
-        # Handle timezone offset mismatch safely
         try:
-            last_active = datetime.fromisoformat(session["last_active"])
-            if last_active.tzinfo:
-                last_active = last_active.replace(tzinfo=None)
-            
-            if datetime.now() - last_active > timedelta(hours=settings.SESSION_TIMEOUT_HOURS):
-                SupabaseService.delete_session(session_id)
+            # 1. Get Session
+            session = SupabaseService.get_session(session_id)
+            if not session:
                 return None
+            
+            # 2. Check Expiry
+            # Handle timezone offset mismatch safely
+            try:
+                last_active = datetime.fromisoformat(session["last_active"])
+                if last_active.tzinfo:
+                    last_active = last_active.replace(tzinfo=None)
+                
+                if datetime.now() - last_active > timedelta(hours=settings.SESSION_TIMEOUT_HOURS):
+                    SupabaseService.delete_session(session_id)
+                    return None
+            except Exception as e:
+                print(f"Error checking session expiry: {e}")
+                # If date parsing fails, assume session is valid or invalid?
+                # Safe to proceed and update activity.
+            
+            # 3. Update Activity
+            SupabaseService.update_session_activity(session_id)
+            
+            # 4. Fetch Documents
+            documents = SupabaseService.get_session_documents(session_id)
+            
+            # 5. Fetch Chat History (limit to last 50 for context and summarization)
+            history = SupabaseService.get_chat_history(session_id, limit=50)
+            
+            # 6. Construct Legacy Dict Structure
+            return {
+                "session_id": session_id,
+                "created_at": session["created_at"],
+                "last_active": session["last_active"],
+                "language": session.get("language", "en"),
+                "documents": documents,
+                "conversation_history": history,
+                # Add new fields if helpful
+                "total_documents": len(documents),
+                "total_messages": len(history)
+            }
         except Exception as e:
-            print(f"Error checking session expiry: {e}")
-            # If date parsing fails, assume session is valid or invalid?
-            # Safe to proceed and update activity.
-        
-        # 3. Update Activity
-        SupabaseService.update_session_activity(session_id)
-        
-        # 4. Fetch Documents
-        documents = SupabaseService.get_session_documents(session_id)
-        
-        # 5. Fetch Chat History (limit to last 50 for context and summarization)
-        history = SupabaseService.get_chat_history(session_id, limit=50)
-        
-        # 6. Construct Legacy Dict Structure
-        return {
-            "session_id": session_id,
-            "created_at": session["created_at"],
-            "last_active": session["last_active"],
-            "language": session.get("language", "en"),
-            "documents": documents,
-            "conversation_history": history,
-            # Add new fields if helpful
-            "total_documents": len(documents),
-            "total_messages": len(history)
-        }
+            print(f"Error getting session from Supabase: {e}")
+            # Fallback: return basic session structure
+            return {
+                "session_id": session_id,
+                "created_at": datetime.now().isoformat(),
+                "last_active": datetime.now().isoformat(),
+                "language": "en",
+                "documents": [],
+                "conversation_history": [],
+                "total_documents": 0,
+                "total_messages": 0
+            }
     
     @staticmethod
     def update_session(session_id: str, data: Dict):
