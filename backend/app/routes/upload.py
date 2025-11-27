@@ -1,4 +1,5 @@
 from fastapi import APIRouter, UploadFile, File, HTTPException, Request
+from fastapi.responses import JSONResponse
 from app.services.document_service import DocumentService
 from app.services.embedding_service import EmbeddingService
 from app.services.session_service import SessionService
@@ -21,6 +22,14 @@ async def upload_document(
     file: UploadFile = File(...)
 ):
     """Upload and process document"""
+    
+    # Add CORS headers at route level too
+    from fastapi import Response
+    response = Response()
+    response.headers["Access-Control-Allow-Origin"] = "*"
+    response.headers["Access-Control-Allow-Methods"] = "GET, POST, PUT, DELETE, OPTIONS, HEAD, PATCH"
+    response.headers["Access-Control-Allow-Headers"] = "*"
+    
     # Get session from IP
     session_id = SessionService.get_client_identifier(request)
     session = SessionService.get_or_create_session(request)
@@ -76,7 +85,15 @@ async def upload_document(
             except Exception as e:
                 logger.error(f"Cloudinary upload failed: {str(e)}")
                 # Fall back to mock response
-                return _mock_upload_response(file.filename, file_size_mb, session_id, len(existing_docs))
+                result = _mock_upload_response(file.filename, file_size_mb, session_id, len(existing_docs))
+                return JSONResponse(
+                    content=result,
+                    headers={
+                        "Access-Control-Allow-Origin": "*",
+                        "Access-Control-Allow-Methods": "GET, POST, PUT, DELETE, OPTIONS, HEAD, PATCH",
+                        "Access-Control-Allow-Headers": "*",
+                    }
+                )
             
             # Save temporarily for text extraction
             with tempfile.NamedTemporaryFile(delete=False, suffix=f".{file_extension}") as tmp_file:
@@ -130,7 +147,15 @@ async def upload_document(
                 logger.error(f"Embedding/Qdrant failed: {str(e)}")
                 logger.error(traceback.format_exc())
                 # Fall back to mock response
-                return _mock_upload_response(file.filename, file_size_mb, session_id, len(existing_docs))
+                result = _mock_upload_response(file.filename, file_size_mb, session_id, len(existing_docs))
+                return JSONResponse(
+                    content=result,
+                    headers={
+                        "Access-Control-Allow-Origin": "*",
+                        "Access-Control-Allow-Methods": "GET, POST, PUT, DELETE, OPTIONS, HEAD, PATCH",
+                        "Access-Control-Allow-Headers": "*",
+                    }
+                )
             
             # Add to session
             try:
@@ -145,7 +170,7 @@ async def upload_document(
                 logger.error(f"Failed to add document to session: {e}")
                 # Continue anyway
             
-            return {
+            result = {
                 "message": "Document uploaded and processed successfully",
                 "session_id": session_id,
                 "filename": file.filename,
@@ -154,6 +179,15 @@ async def upload_document(
                 "documents_remaining": settings.MAX_DOCUMENTS_PER_USER - len(existing_docs) - 1,
                 "file_url": file_data["url"]
             }
+            
+            return JSONResponse(
+                content=result,
+                headers={
+                    "Access-Control-Allow-Origin": "*",
+                    "Access-Control-Allow-Methods": "GET, POST, PUT, DELETE, OPTIONS, HEAD, PATCH",
+                    "Access-Control-Allow-Headers": "*",
+                }
+            )
         
         except HTTPException:
             raise
@@ -161,7 +195,15 @@ async def upload_document(
             logger.error(f"Unexpected error in upload_document: {str(e)}")
             logger.error(traceback.format_exc())
             # Fall back to mock response
-            return _mock_upload_response(file.filename, file_size_mb, session_id, len(existing_docs))
+            result = _mock_upload_response(file.filename, file_size_mb, session_id, len(existing_docs))
+            return JSONResponse(
+                content=result,
+                headers={
+                    "Access-Control-Allow-Origin": "*",
+                    "Access-Control-Allow-Methods": "GET, POST, PUT, DELETE, OPTIONS, HEAD, PATCH",
+                    "Access-Control-Allow-Headers": "*",
+                }
+            )
     
     except HTTPException:
         raise
