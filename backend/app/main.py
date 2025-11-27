@@ -6,6 +6,7 @@ from app.config import settings
 from app.services.cleanup_service import CleanupService
 from app.services.embedding_service import EmbeddingService
 import logging
+from datetime import datetime
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
@@ -24,7 +25,7 @@ scheduler = AsyncIOScheduler()
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],  # Allow all origins for development
-    allow_credentials=True,
+    allow_credentials=False,  # Set to False when using wildcard origins
     allow_methods=["*"],
     allow_headers=["*"],
 )
@@ -64,6 +65,10 @@ async def root():
 @app.get("/health")
 async def health_check():
     return {"status": "healthy"}
+
+@app.get("/test-cors")
+async def test_cors():
+    return {"message": "CORS test successful", "timestamp": datetime.now().isoformat()}
 
 if __name__ == "__main__":
     import uvicorn
