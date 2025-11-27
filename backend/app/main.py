@@ -27,12 +27,27 @@ app.add_middleware(
         settings.FRONTEND_URL,
         settings.VERCEL_FRONTEND_URL,
         "https://rag-bot-89wz-l567k4il7-ieimpact.vercel.app",
-        "https://rag-bot-89wz.vercel.app"
+        "https://rag-bot-89wz.vercel.app",
+        "https://rag-bot-89wz-giy0zjbcp-ieimpact.vercel.app"
     ],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+# Also allow any Vercel preview domain dynamically
+@app.middleware("http")
+async def add_vercel_cors(request, call_next):
+    origin = request.headers.get("origin")
+    if origin and (origin.startswith("https://rag-bot-89wz") and origin.endswith(".vercel.app")):
+        # Add this origin to CORS headers for Vercel preview deployments
+        response = await call_next(request)
+        response.headers["Access-Control-Allow-Origin"] = origin
+        response.headers["Access-Control-Allow-Credentials"] = "true"
+        response.headers["Access-Control-Allow-Methods"] = "*"
+        response.headers["Access-Control-Allow-Headers"] = "*"
+        return response
+    return await call_next(request)
 
 # Include routers
 app.include_router(upload.router, prefix="/api", tags=["Upload"])
