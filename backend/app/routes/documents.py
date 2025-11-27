@@ -13,18 +13,26 @@ async def list_documents(request: Request):
     session_id = SessionService.get_client_identifier(request)
     session = SessionService.get_session(session_id)
     
-    # Even if session is None (not active), we might have docs? 
-    # But we need session_id. get_client_identifier gives us the ID.
-    # session object is just for validation or extra info.
-    
-    # We can fetch documents directly.
-    documents = SupabaseService.get_user_documents(session_id)
-    
-    return {
-        "session_id": session_id,
-        "documents": documents,
-        "total": len(documents)
-    }
+    try:
+        # Even if session is None (not active), we might have docs? 
+        # But we need session_id. get_client_identifier gives us the ID.
+        # session object is just for validation or extra info.
+        
+        # We can fetch documents directly.
+        documents = SupabaseService.get_user_documents(session_id)
+        
+        return {
+            "session_id": session_id,
+            "documents": documents,
+            "total": len(documents)
+        }
+    except Exception as e:
+        # Fallback: return empty documents list
+        return {
+            "session_id": session_id,
+            "documents": [],
+            "total": 0
+        }
 
 @router.delete("/documents/{filename}")
 async def delete_document(request: Request, filename: str):

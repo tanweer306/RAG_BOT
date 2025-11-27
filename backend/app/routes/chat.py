@@ -143,4 +143,9 @@ async def get_chat_history(
             "total": len(history)
         }
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        logger.error(f"Error getting chat history from Supabase: {str(e)}")
+        # Fallback: return empty history
+        return {
+            "history": [],
+            "total": 0
+        }
