@@ -1,4 +1,4 @@
-from fastapi import FastAPI, Response
+from fastapi import FastAPI, Response, Request
 from fastapi.middleware.cors import CORSMiddleware
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
 from app.routes import upload, chat, documents, session, admin
@@ -25,21 +25,25 @@ scheduler = AsyncIOScheduler()
 @app.middleware("http")
 async def custom_cors_middleware(request, call_next):
     origin = request.headers.get("origin")
-    
-    # Process the request
-    response = await call_next(request)
-    
+
+    # Handle preflight OPTIONS requests without hitting route validation
+    if request.method == "OPTIONS":
+        response = Response(status_code=200)
+    else:
+        # Process the request
+        response = await call_next(request)
+
     # Add CORS headers to all responses
     response.headers["Access-Control-Allow-Origin"] = "*" if origin else "*"
     response.headers["Access-Control-Allow-Methods"] = "GET, POST, PUT, DELETE, OPTIONS, HEAD, PATCH"
     response.headers["Access-Control-Allow-Headers"] = "*"
     response.headers["Access-Control-Expose-Headers"] = "*"
-    
+
     return response
 
 # Also handle pre-flight OPTIONS requests explicitly
 @app.options("/{path:path}")
-async def preflight_handler(request, path: str):
+async def preflight_handler(request: Request, path: str):
     return Response(
         status_code=200,
         headers={
